@@ -69,8 +69,6 @@ module spi_peripheral (
 
             if(nCS_sync[2]) begin
                 transaction_complete <= 1;
-                num_bits <= 0;
-                transaction_data <= 16'b0;
             end else if (transaction_processed) begin
                 transaction_complete <= 0;
             end
