@@ -77,7 +77,7 @@ module spi_peripheral (
     end
 
 
-    always @posedge(posedge clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             en_reg_out_7_0 <= 8'b0;
             en_reg_out_15_8 <= 8'b0;
