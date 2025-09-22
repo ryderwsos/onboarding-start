@@ -60,7 +60,7 @@ module spi_peripheral (
             
 
             //start bit count logic
-            if (!nCS_sync[2] && SCLK_sync[2]) begin
+            if (!nCS_sync[2] && SCLK_sync[1] && !SCLK_sync[2]) begin
                 transaction_data <= {transaction_data[14:0], COPI_sync[2]};
                 if (num_bits < 16) begin
                     num_bits <= num_bits + 1;
