@@ -23,9 +23,6 @@ module spi_peripheral (
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
-            nCS <= 1'b1;
-            SCLK <= 1'b0;
-            COPI <= 1'b0;
             // en_reg_out_7_0 <= 8'b0;
             // en_reg_out_15_8 <= 8'b0;
             // en_reg_pwm_7_0 <= 8'b0;
