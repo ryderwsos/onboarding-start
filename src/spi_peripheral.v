@@ -84,14 +84,14 @@ module spi_peripheral (
             en_reg_pwm_7_0 <= 8'b0;
             en_reg_pwm_15_8 <= 8'b0;
             pwm_duty_cycle <= 8'b0;
-        end else if (transaction_complete and !transaction_processed) begin
+        end else if (transaction_complete && !transaction_processed) begin
             if (transaction_data[14:8] == 7'h00) en_reg_out_7_0 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h01) en_reg_out_15_8 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h02) en_reg_pwm_7_0 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h03) en_reg_pwm_15_8 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h04) pwm_duty_cycle <= transaction_data[7:0];
             transaction_processed <= 1;
-        end else if (!transaction_complete and transaction_processed) begin
+        end else if (!transaction_complete && transaction_processed) begin
             transaction_processed <= 0;
         end
 
