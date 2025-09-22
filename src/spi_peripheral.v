@@ -19,8 +19,6 @@ module spi_peripheral (
     // transaction handshake
     reg transaction_complete, transaction_processed;
 
-    localparam [6:0] max_address = 7'h04;
-
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             // en_reg_out_7_0 <= 8'b0;
@@ -32,7 +30,7 @@ module spi_peripheral (
             SCLK_sync <= 3'b0;
             COPI_sync <= 3'b0;
             transaction_data <= 16'b0;
-            num_bits <= 3'b0;
+            num_bits <= 5'b0;
             transaction_complete <= 1'b0;
             transaction_processed <= 1'b0;
         end else begin
@@ -85,7 +83,7 @@ module spi_peripheral (
             en_reg_pwm_7_0 <= 8'b0;
             en_reg_pwm_15_8 <= 8'b0;
             pwm_duty_cycle <= 8'b0;
-        end else if (transaction_complete && !transaction_processed) begin
+        end else if (transaction_complete && !transaction_processed && transaction[15]) begin
             if (transaction_data[14:8] == 7'h00) en_reg_out_7_0 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h01) en_reg_out_15_8 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h02) en_reg_pwm_7_0 <= transaction_data[7:0];
