@@ -19,7 +19,7 @@ module spi_peripheral (
     // transaction handshake
     reg transaction_complete, transaction_processed;
 
-    localparam [6:0] max_address = 7'h04 
+    localparam [6:0] max_address = 7'h04;
 
     always @(posedge clk or negedge rst_n) begin
         if(rst_n) begin
