@@ -31,7 +31,7 @@ module spi_peripheral (
             // en_reg_pwm_7_0 <= 8'b0;
             // en_reg_pwm_15_8 <= 8'b0;
             // pwm_duty_cycle <= 8'b0;
-            nCS_sync <= 3'b1;
+            nCS_sync <= 3'b111;
             SCLK_sync <= 3'b0;
             COPI_sync <= 3'b0;
             transaction_data <= 16'b0;
