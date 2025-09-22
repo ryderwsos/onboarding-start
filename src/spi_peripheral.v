@@ -15,7 +15,7 @@ module spi_peripheral (
     reg [2:0] nCS_sync, SCLK_sync, COPI_sync;
     //[15] -> r/w, [14:8] -> address, [7:0] -> data
     reg [15:0] transaction_data;
-    reg [3:0] num_bits;
+    reg [5:0] num_bits;
     // transaction handshake
     reg transaction_complete, transaction_processed;
 
