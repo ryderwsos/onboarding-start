@@ -22,7 +22,7 @@ module spi_peripheral (
     localparam [6:0] max_address = 7'h04;
 
     always @(posedge clk or negedge rst_n) begin
-        if(rst_n) begin
+        if(!rst_n) begin
             nCS <= 1'b1;
             SCLK <= 1'b0;
             COPI <= 1'b0;
@@ -54,20 +54,26 @@ module spi_peripheral (
             COPI_sync[1] <= COPI_sync[0];
             COPI_sync[2] <= COPI_sync[1];
 
+
+            //clear on start of transaction
+            if (nCS_sync[1] && !nCS_sync[2])begin
+                transaction_data <= 16'b0;
+                num_bits <= 0;
+            end
             
 
             //start bit count logic
-            if (!nCS_sync[2] && SCLK[2]) begin
+            if (!nCS_sync[2] && SCLK_sync[2]) begin
                 transaction_data <= {transaction_data[14:0], COPI_sync};
                 if (num_bits < 16) begin
-                    num_bits = num_bits + 1;
+                    num_bits <= num_bits + 1;
                 end
             end
 
             if(nCS_sync[2]) begin
                 transaction_complete <= 1;
-                num_bits = 0;
-                transaction_data = 16'b0;
+                num_bits <= 0;
+                transaction_data <= 16'b0;
             end else if (transaction_processed) begin
                 transaction_complete <= 0;
             end
