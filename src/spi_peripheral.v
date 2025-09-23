@@ -32,7 +32,6 @@ module spi_peripheral (
             transaction_data <= 16'b0;
             num_bits <= 6'b0;
             transaction_complete <= 1'b0;
-            transaction_processed <= 1'b0;
         end else begin
             //sync nCS take index 2 as final sync
             nCS_sync[0] <= nCS;
@@ -83,6 +82,7 @@ module spi_peripheral (
             en_reg_pwm_7_0 <= 8'b0;
             en_reg_pwm_15_8 <= 8'b0;
             pwm_duty_cycle <= 8'b0;
+            transaction_processed <= 1'b0;
         end else if (transaction_complete && !transaction_processed && transaction_data[15]) begin
             if (transaction_data[14:8] == 7'h00) en_reg_out_7_0 <= transaction_data[7:0];
             if (transaction_data[14:8] == 7'h01) en_reg_out_15_8 <= transaction_data[7:0];
