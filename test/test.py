@@ -154,6 +154,8 @@ async def test_pwm_freq(dut):
     # Write your test here
     dut._log.info("Start PWM frequency test")
     
+    clock = Clock(dut.clk, 100, units="ns")
+    cocotb.start_soon(clock.start())
     # enable dut
     dut.ena.value = 1
     ncs = 1
