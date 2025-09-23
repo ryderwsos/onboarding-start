@@ -178,13 +178,14 @@ async def test_pwm_freq(dut):
     await ClockCycles(dut.clk, 30000)
     
     await RisingEdge(dut.clk)
-    t_rising_edge1 = cocotb.utils.get_sim_steps(units='ns')
+    t_rising_edge1 = cocotb.utils.get_sim_time(units='ns')
     await RisingEdge(dut.clk)
-    t_rising_edge2 = cocotb.utils.get_sim_steps(units='ns')
+    t_rising_edge2 = cocotb.utils.get_sim_time(units='ns')
     
     freq = 1/(t_rising_edge2-t_rising_edge1)
     
-    dut._log.info(f"Measured frequency: {freq} ns")
+    assert 2970.0 <= freq <= 3030.0, \
+        f"Frequency out of range: {freq:.2f} Hz (expected 3000 ±1%)"
     dut._log.info("PWM Frequency test completed successfully")
 
 @cocotb.test()
