@@ -178,9 +178,9 @@ async def test_pwm_freq(dut):
     await ClockCycles(dut.clk, 30000)
     
     await RisingEdge(dut.clk)
-    t_rising_edge1 = cocotb.sim_time(units='ns')
+    t_rising_edge1 = cocotb.utils.get_sim_steps(units='ns')
     await RisingEdge(dut.clk)
-    t_rising_edge2 = cocotb.sim_time(units='ns')
+    t_rising_edge2 = cocotb.utils.get_sim_steps(units='ns')
     
     freq = 1/(t_rising_edge2-t_rising_edge1)
     
