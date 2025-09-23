@@ -30,7 +30,7 @@ module spi_peripheral (
             SCLK_sync <= 3'b0;
             COPI_sync <= 3'b0;
             transaction_data <= 16'b0;
-            num_bits <= 5'b0;
+            num_bits <= 6'b0;
             transaction_complete <= 1'b0;
             transaction_processed <= 1'b0;
         end else begin
