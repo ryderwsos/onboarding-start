@@ -205,7 +205,7 @@ async def test_pwm_freq(dut):
 async def test_pwm_duty(dut):
     # Write your test here
     dut._log.info("Start PWM duty cycle test")
-        clock = Clock(dut.clk, 100, units="ns")
+    clock = Clock(dut.clk, 100, units="ns")
     cocotb.start_soon(clock.start())
     # enable dut
     dut.ena.value = 1
