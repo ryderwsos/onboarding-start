@@ -3,7 +3,7 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import RisingEdge, FallingEdge
 from cocotb.triggers import ClockCycles
 from cocotb.types import Logic
 from cocotb.types import LogicArray
@@ -177,9 +177,10 @@ async def test_pwm_freq(dut):
     
     await ClockCycles(dut.clk, 30000)
     
-    await RisingEdge(dut.uo_out)
+    pwm_sig = dut.uo_out[0]
+    await RisingEdge(pwm_sig)
     t_rising_edge1 = cocotb.utils.get_sim_time(units='ns')
-    await RisingEdge(dut.uo_out)
+    await RisingEdge(pwm_sig)
     t_rising_edge2 = cocotb.utils.get_sim_time(units='ns')
     
     freq = 1e9/(t_rising_edge2-t_rising_edge1)
@@ -191,4 +192,56 @@ async def test_pwm_freq(dut):
 @cocotb.test()
 async def test_pwm_duty(dut):
     # Write your test here
+    dut._log.info("Start PWM duty cycle test")
+
+    # Clock setup
+    clock = Clock(dut.clk, 100, units="ns")
+    cocotb.start_soon(clock.start())
+
+    # Reset
+    dut.ena.value = 1
+    dut.rst_n.value = 0
+    await ClockCycles(dut.clk, 5)
+    dut.rst_n.value = 1
+    await ClockCycles(dut.clk, 5)
+
+    # Enable output
+    await send_spi_transaction(dut, 1, 0x00, 0xFF)
+    # Enable PWM
+    await send_spi_transaction(dut, 1, 0x02, 0xFF)
+
+    async def measure_duty(expected, reg_val):
+        """Helper: program duty cycle and measure"""
+        await send_spi_transaction(dut, 1, 0x04, reg_val)
+        # give time to settle
+        await ClockCycles(dut.clk, 10000)
+
+        # Measure one full PWM period on output
+        pwm_sig = dut.uo_out[0]
+        await RisingEdge(pwm_sig)
+        t_rise1 = cocotb.utils.get_sim_time(units="ns")
+        await FallingEdge(pwm_sig)
+        t_fall = cocotb.utils.get_sim_time(units="ns")
+        await RisingEdge(pwm_sig)
+        t_rise2 = cocotb.utils.get_sim_time(units="ns")
+
+        period = t_rise2 - t_rise1
+        high_time = t_fall - t_rise1
+        duty = high_time / period if period > 0 else 0.0
+
+        dut._log.info(f"Measured duty = {duty*100:.1f}% (expected {expected}%)")
+        return duty
+
+    # --- Test 0% duty ---
+    duty = await measure_duty(0, 0x00)
+    assert duty < 0.05, f"Duty not ~0%: {duty*100:.1f}%"
+
+    # --- Test 50% duty ---
+    duty = await measure_duty(50, 0x80)
+    assert 0.45 <= duty <= 0.55, f"Duty not ~50%: {duty*100:.1f}%"
+
+    # --- Test 100% duty ---
+    duty = await measure_duty(100, 0xFF)
+    assert duty > 0.95, f"Duty not ~100%: {duty*100:.1f}%"
+
     dut._log.info("PWM Duty Cycle test completed successfully")
