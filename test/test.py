@@ -177,13 +177,25 @@ async def test_pwm_freq(dut):
     
     await ClockCycles(dut.clk, 30000)
     
-    pwm_sig = dut.uo_out[0]
-    await RisingEdge(pwm_sig)
+    PWM_BIT = 0
+    async def wait_pwm_rise():
+        prev = (int(dut.uo_out.value) >> PWM_BIT) & 1
+        for _ in range(500000):             # timeout guard
+            await RisingEdge(dut.clk)
+            cur = (int(dut.uo_out.value) >> PWM_BIT) & 1
+            if prev == 0 and cur == 1:
+                return
+            prev = cur
+        assert False, f"Timeout waiting for rising edge on uo_out[{PWM_BIT}]"
+
+    # measure one period (use two rising edges)
+    await wait_pwm_rise()
     t_rising_edge1 = cocotb.utils.get_sim_time(units='ns')
-    await RisingEdge(pwm_sig)
+
+    await wait_pwm_rise()
     t_rising_edge2 = cocotb.utils.get_sim_time(units='ns')
-    
-    freq = 1e9/(t_rising_edge2-t_rising_edge1)
+
+    freq = 1e9/(t_rising_edge2 - t_rising_edge1)
     
     assert 2970.0 <= freq <= 3030.0, \
         f"Frequency out of range: {freq:.2f} Hz (expected 3000 ±1%)"
