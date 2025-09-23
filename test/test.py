@@ -205,55 +205,90 @@ async def test_pwm_freq(dut):
 async def test_pwm_duty(dut):
     # Write your test here
     dut._log.info("Start PWM duty cycle test")
-
-    # Clock setup
-    clock = Clock(dut.clk, 100, units="ns")
+        clock = Clock(dut.clk, 100, units="ns")
     cocotb.start_soon(clock.start())
-
-    # Reset
+    # enable dut
     dut.ena.value = 1
+    ncs = 1
+    bit = 0
+    sclk = 0
+    dut.ui_in.value = ui_in_logicarray(ncs, bit, sclk)
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
 
-    # Enable output
+    
+    # enable output
     await send_spi_transaction(dut, 1, 0x00, 0xFF)
-    # Enable PWM
+    # enable PWM 
     await send_spi_transaction(dut, 1, 0x02, 0xFF)
+    
+    await ClockCycles(dut.clk, 30000)
+    
+    PWM_BIT = 0
+    async def wait_pwm_rise():
+        prev = (int(dut.uo_out.value) >> PWM_BIT) & 1
+        for _ in range(500000):             # timeout guard
+            await RisingEdge(dut.clk)
+            cur = (int(dut.uo_out.value) >> PWM_BIT) & 1
+            if prev == 0 and cur == 1:
+                return
+            prev = cur
+        assert False, f"Timeout waiting for rising edge on uo_out[{PWM_BIT}]"
+    
+    async def wait_fall(timeout=500000):
+        prev = (int(dut.uo_out.value) >> PWM_BIT) & 1
+        for _ in range(timeout):
+            await RisingEdge(dut.clk)
+            cur = (int(dut.uo_out.value) >> PWM_BIT) & 1
+            if prev == 1 and cur == 0:
+                return
+            prev = cur
+        assert False, f"Timeout waiting for falling edge on uo_out[{PWM_BIT}]"
 
-    async def measure_duty(expected, reg_val):
-        """Helper: program duty cycle and measure"""
+    async def program_and_measure(reg_val, expected_pct):
         await send_spi_transaction(dut, 1, 0x04, reg_val)
-        # give time to settle
-        await ClockCycles(dut.clk, 10000)
+        await ClockCycles(dut.clk, 10000)  # settle
 
-        # Measure one full PWM period on output
-        pwm_sig = dut.uo_out[0]
-        await RisingEdge(pwm_sig)
-        t_rise1 = cocotb.utils.get_sim_time(units="ns")
-        await FallingEdge(pwm_sig)
-        t_fall = cocotb.utils.get_sim_time(units="ns")
-        await RisingEdge(pwm_sig)
-        t_rise2 = cocotb.utils.get_sim_time(units="ns")
+        # quick constant-level shortcut (covers 0% and 100% cleanly)
+        first = (int(dut.uo_out.value) >> PWM_BIT) & 1
+        same = True
+        for _ in range(1024):
+            await RisingEdge(dut.clk)
+            if ((int(dut.uo_out.value) >> PWM_BIT) & 1) != first:
+                same = False
+                break
+        if same:
+            duty = 1.0 if first == 1 else 0.0
+            dut._log.info(f"Duty (constant) = {duty*100:.1f}% (expected {expected_pct}%)")
+            return duty
 
-        period = t_rise2 - t_rise1
+        # Measure: rise -> fall -> rise
+        await wait_pwm_rise()
+        t_rise1 = cocotb.utils.get_sim_time(units='ns')
+        await wait_fall()
+        t_fall = cocotb.utils.get_sim_time(units='ns')
+        await wait_pwm_rise()
+        t_rise2 = cocotb.utils.get_sim_time(units='ns')
+
         high_time = t_fall - t_rise1
+        period    = t_rise2 - t_rise1
         duty = high_time / period if period > 0 else 0.0
-
-        dut._log.info(f"Measured duty = {duty*100:.1f}% (expected {expected}%)")
+        dut._log.info(f"Duty = {duty*100:.1f}% (expected {expected_pct}%)")
         return duty
 
-    # --- Test 0% duty ---
-    duty = await measure_duty(0, 0x00)
-    assert duty < 0.05, f"Duty not ~0%: {duty*100:.1f}%"
+    # 0% duty
+    d = await program_and_measure(0x00, 0)
+    assert d < 0.05, f"Duty not ~0%: {d*100:.1f}%"
 
-    # --- Test 50% duty ---
-    duty = await measure_duty(50, 0x80)
-    assert 0.45 <= duty <= 0.55, f"Duty not ~50%: {duty*100:.1f}%"
+    # 50% duty
+    d = await program_and_measure(0x80, 50)
+    assert 0.45 <= d <= 0.55, f"Duty not ~50%: {d*100:.1f}%"
 
-    # --- Test 100% duty ---
-    duty = await measure_duty(100, 0xFF)
-    assert duty > 0.95, f"Duty not ~100%: {duty*100:.1f}%"
+    # 100% duty
+    d = await program_and_measure(0xFF, 100)
+    assert d > 0.95, f"Duty not ~100%: {d*100:.1f}%"
+    
 
     dut._log.info("PWM Duty Cycle test completed successfully")
