@@ -182,7 +182,7 @@ async def test_pwm_freq(dut):
     await RisingEdge(dut.clk)
     t_rising_edge2 = cocotb.utils.get_sim_time(units='ns')
     
-    freq = 1/(t_rising_edge2-t_rising_edge1)
+    freq = 1e9/(t_rising_edge2-t_rising_edge1)
     
     assert 2970.0 <= freq <= 3030.0, \
         f"Frequency out of range: {freq:.2f} Hz (expected 3000 ±1%)"
